@@ -34,7 +34,7 @@ These examples are not ordered in any particular way, "Example 1" does not mean 
 **Binary**: remux \
 **Function**: remuxes from any container with h264 encoded video to FLV container \
 **Notes**: none \
-**Usage**: tool takes 2 input arguments \
+**Usage**: tool takes 2 input arguments
 1) path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example)
 2) output filename. output file will be written to current directory you're in
 ```bash
@@ -46,7 +46,7 @@ These examples are not ordered in any particular way, "Example 1" does not mean 
 **Binary**: remux_from_memory \
 **Function**: reads mpeg ts h264 data from file, puts it into memory buffer and remuxes to FLV on the fly \
 **Notes**: shows how to create AVFormatContext that reads from memory buffer, instead of a file directly \
-**Usage**: tool takes 2 input arguments \
+**Usage**: tool takes 2 input arguments
 1) path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example)
 2) output filename. output file will be written to current directory you're in
 
@@ -59,7 +59,7 @@ These examples are not ordered in any particular way, "Example 1" does not mean 
 **Binary**: srt_to_flv \
 **Function**: receives mpeg ts h264 data from SRT stream, puts it into memory buffer and remuxes to FLV on the fly \
 **Notes**: shows how to create simple SRT server. same as example 2, but we're reading from data sent over the network \
-**Usage**: tool takes 2 input arguments \
+**Usage**: tool takes 2 input arguments
 1) hostname:port. ip/port for SRT server to run on
 2) output filename. output file will be written to current directory you're in
 
