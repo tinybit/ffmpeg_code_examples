@@ -2,7 +2,7 @@
 FFmpeg coding tutorial - learn how to code custom transmuxing, transcoding, metadata extraction, frame-by-frame reading and more
 
 ## Intro
-Welcome, weary traveller! Let me guess why you're here ;) Maybe because you've been trying to figure out how to use libav libraries (libavformat/libavcodec/etc) and failed miserably? Well, it's no suprise, given the fact that ffmpeg is a product made by engineers for engineers. Existing documentation is either lacking or outdated, examples you find online don't work for whatever reason. This repo will hopefully help :3 I've spent weeks of research on ffmpeg internals while trying to figure out how to do remuxing with libav and decided to share my findings. This repo was inspired by https://github.com/leandromoreira/ffmpeg-libav-tutorial, some other really useful pointers can be found here: https://ffmpeg.org/doxygen/trunk/examples.html
+Welcome, weary traveller! Let me guess why you're here ;) Maybe because you've been trying to figure out how to use libav libraries (libavformat/libavcodec/etc) and failed miserably? Well, it's no suprise, given the fact that ffmpeg is a product made by engineers for engineers. Existing documentation is either lacking or outdated, examples you find online don't work for whatever reason. This repo will hopefully help :3 I've spent a bit of time to research on ffmpeg internals while trying to figure out how to do remuxing and transcoding with libav. This repo is my attempt to share my findings and spare you some time. This repo was inspired by https://github.com/leandromoreira/ffmpeg-libav-tutorial, some other really useful pointers can be found here: https://ffmpeg.org/doxygen/trunk/examples.html
 
 ## Required software and dependencies
 We will need 3 things:
