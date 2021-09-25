@@ -32,11 +32,11 @@ These examples are not ordered in any particular way, "Example 1" does not mean 
 ### Example 1 - Remuxing
 **Source**: 01-remuxing.cpp \
 **Binary**: remux \
-**Function**: remuxes from any container with h264 encoded video to FLV container \
-**Notes**: none \
-**Usage**: tool takes 2 input arguments
-1) path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example)
-2) output filename. output file will be written to current directory you're in
+**Function**: Remuxes from any container with h264 encoded video to FLV container \
+**Notes**: None \
+**Usage**: Tool takes 2 input arguments
+1) Path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example)
+2) Output filename. output file will be written to current directory you're in
 ```bash
 ./remux test_x264.mp4 test.flv
 ```
@@ -44,40 +44,40 @@ These examples are not ordered in any particular way, "Example 1" does not mean 
 ### Example 2 - Reading input stream from memory
 **Source**: 02-reading-from-memory.cpp \
 **Binary**: remux_from_memory \
-**Function**: reads mpeg ts h264 data from file, puts it into memory buffer and remuxes to FLV on the fly \
-**Notes**: shows how to create AVFormatContext that reads from memory buffer using customized i/o context (AVIOContext) \
-**Usage**: tool takes 2 input arguments
-1) path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example)
-2) output filename. output file will be written to current directory you're in
+**Function**: Reads mpeg ts h264 data from file, puts it into memory buffer and remuxes to FLV on the fly \
+**Notes**: Shows how to create AVFormatContext that reads from memory buffer using customized i/o context (AVIOContext) \
+**Usage**: Tool takes 2 input arguments
+1) Path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example)
+2) Output filename. output file will be written to current directory you're in
 
 ```bash
-./remux_from_memory test_x264.mp4 test.flv
+./read_from_memory test_x264.mp4 test.flv
 ```
 
 ### Example 3 - Writing output stream to memory
 **Source**: 03-writing-to-memory.cpp \
 **Binary**: remux_to_memory \
-**Function**: reads mpeg ts h264 data from file stream, remuxes it to FLV on the fly and writes results to memory buffer
-**Notes**: shows how to create AVFormatContext that reads from memory buffer using customized i/o context (AVIOContext) \
-**Usage**: tool takes 2 input arguments
-1) path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example)
-2) output filename. output file will be written to current directory you're in
+**Function**: Reads mpeg ts h264 data from file stream, remuxes it to FLV on the fly and writes results to memory buffer
+**Notes**: Shows how to create AVFormatContext that reads from memory buffer using customized i/o context (AVIOContext) \
+**Usage**: Tool takes 2 input arguments
+1) Path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example)
+2) Output filename. output file will be written to current directory you're in
 
 ```bash
-./remux_to_memory test_x264.mp4 test.flv
+./write_to_memory test_x264.mp4 test.flv
 ```
 
 ### Example 4 - Reading input stream from SRT, remux to FLV and write result to file
 **Source**: 04-reading-from-srt.cpp \
 **Binary**: srt_to_flv \
-**Function**: receives mpeg ts h264 data from SRT stream, puts it into memory buffer and remuxes to FLV on the fly \
-**Notes**: shows how to create simple SRT server and process received media stream with libav. mix of example 2 and 3, but we're reading from data sent over the network \
-**Usage**: tool takes 2 input arguments
+**Function**: Receives mpeg ts h264 data from SRT stream, puts it into memory buffer and remuxes to FLV on the fly \
+**Notes**: Advanced example. Shows how to create simple SRT server and process received media stream with libav. Similar to example 2, but we're reading from data sent over the network. Please note that this is not a full-fleged server, it will correctly handle one incoming connection only.
+**Usage**: Tool takes 2 input arguments
 1) hostname:port. ip/port for SRT server to run on
-2) output filename. output file will be written to current directory you're in
+2) Output filename. output file will be written to current directory you're in
 
 ```bash
-./remux_from_memory 0.0.0.0:9999 test.flv
+./srt_to_flv 0.0.0.0:9999 test.flv
 ```
 
 ### Example 5 - Get media info
