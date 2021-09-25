@@ -72,12 +72,13 @@ These examples are not ordered in any particular way, "Example 1" does not mean 
 **Binary**: srt_to_flv \
 **Function**: Receives mpeg ts h264 data from SRT stream, puts it into memory buffer and remuxes to FLV on the fly \
 **Notes**: Advanced example. Shows how to create simple SRT server and process received media stream with libav. Similar to example 2, but we're reading from data sent over the network. Please note that this is not a full-fleged server, it will correctly handle one incoming connection only.
-**Usage**: Tool takes 2 input arguments
-1) hostname:port. ip/port for SRT server to run on
-2) Output filename. output file will be written to current directory you're in
+**Usage**: Tool takes 3 input arguments
+1) ip. for SRT server to bind to
+2) port. for SRT server to run on
+3) Output filename. output file will be written to current directory you're in
 
 ```bash
-./srt_to_flv 0.0.0.0:9999 test.flv
+./srt_to_flv 0.0.0.0 9999 test.flv
 ```
 
 ### Example 5 - Get media info
