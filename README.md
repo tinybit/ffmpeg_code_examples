@@ -30,10 +30,11 @@ After compilation you will find a bunch of binaries in project root. Their meani
 These examples are not ordered in any particular way, "Example 1" does not mean it's simplier that others, even though I've tried keeping code clean and well commented for ease of understanding. Any suggestions / bugfixes are welcome.
 
 ### Example 1 - Remuxing
-Source: 01-remuxing.cpp \
-Binary: **remux** \
-Function: remuxes from any container with h264 encoded video to FLV container. \
-Usage: tool takes 2 input arguments \
+**Source**: 01-remuxing.cpp \
+**Binary**: remux \
+**Function**: remuxes from any container with h264 encoded video to FLV container \
+**Notes**: none
+**Usage**: tool takes 2 input arguments \
 1) path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example) \
 2) output filename. output file will be written to current directory you're in \
 ```bash
@@ -41,20 +42,30 @@ Usage: tool takes 2 input arguments \
 ```
 
 ### Example 2 - Reading input stream from memory
-Source: 02-reading-from_memory.cpp
-
-Binary: **remux**
-
-Function: reads mpeg ts h264 data from file, puts it into memory buffer and remuxes to FLV on the fly.
-Usage: tool takes 2 input arguments
+**Source**: 02-reading-from-memory.cpp \
+**Binary**: remux_from_memory \
+**Function**: reads mpeg ts h264 data from file, puts it into memory buffer and remuxes to FLV on the fly \
+**Notes**: shows how to create AVFormatContext that reads from memory buffer, instead of a file directly
+**Usage**: tool takes 2 input arguments \
 1) path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example)
 2) output filename. output file will be written to current directory you're in
 
 ```bash
-./remux test_x264.mp4 test.flv
+./remux_from_memory test_x264.mp4 test.flv
 ```
 
-2 DO
+### Example 3 - Reading input stream from SRT, remux to FLV and write result to file
+**Source**: 02-reading-from-srt.cpp \
+**Binary**: srt_to_flv \
+**Function**: receives mpeg ts h264 data from SRT stream, puts it into memory buffer and remuxes to FLV on the fly \
+**Notes**: shows how to create simple SRT server. same as example 2, but we're reading from data sent over the network
+**Usage**: tool takes 2 input arguments \
+1) hostname:port. ip/port for SRT server to run on
+2) output filename. output file will be written to current directory you're in
+
+```bash
+./remux_from_memory 0.0.0.0:9999 test.flv
+```
 
 ### Example 3 - Get media info
 2 DO
