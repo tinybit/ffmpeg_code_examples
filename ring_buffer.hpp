@@ -8,8 +8,8 @@
 *
 */
 
-#ifndef ring_buffer_h
-#define ring_buffer_h
+#ifndef ring_buffer_hpp
+#define ring_buffer_hpp
 
 #include <cstddef>
 #include <algorithm>
@@ -41,4 +41,4 @@ private:
     char*  m_buff;
 };
 
-#endif /* ring_buffer_h */
+#endif /* ring_buffer_hpp */

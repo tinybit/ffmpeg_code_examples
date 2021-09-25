@@ -1,12 +1,13 @@
 /*
 *
-* File: 01-remuxing.cpp
+* File: 03-writing-to-memory.cpp
 *
 * Author: Rim Zaydullin
 * Repo: https://github.com/tinybit/ffmpeg_code_examples
 *
-* simple libav remuxing example.
-* read video file from disk, remux, write resulting file to disk
+* more advanced libav remuxing example.
+* read video file from disk, remux to FLV and write results to memory
+* we will use customized AVIOContext to handle write requests from AVFormatContext
 *
 * input file requirements:
 * - video must be encoded with wither h264 or vp6 video codecs
@@ -18,15 +19,43 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <fstream>
 
 extern "C" {
     #include <libavformat/avformat.h>
 }
 
 #include "helpers.hpp"
+#include "ring_buffer.hpp"
+
+// FileReader class emulates reading from memory, you can implement your own memory reader/buffer following this
+// code. you only need to feed AVIOContext.read_packet callback with data, that's all.
+// AVIOContext.read_packet callback will be called during av_read_frame(context, packet) and other
+// context read operations. see more in functions make_input_ctx(), read_callback() below
+class FileReader {
+public:
+    FileReader(const char* filename) {
+        input_file.open(filename, std::ifstream::binary | std::ifstream::in);
+    }
+
+    int read(char* data, int size) {
+        if (input_file.eof()) {
+            return -1;
+        }
+
+        input_file.read(data, size);
+        return input_file.gcount();
+    }
+
+    void close() {
+        input_file.close();
+    }
+
+    std::ifstream input_file;
+};
 
 // functions predeclarations
-bool make_input_ctx(AVFormatContext** input_ctx, const char* filename);
+bool make_input_ctx(AVFormatContext** input_ctx, AVIOContext** avio_input_ctx, FileReader* reader, const char* filename);
 bool make_output_ctx(AVFormatContext** output_ctx, const char* format_name, const char* filename);
 bool make_streams_map(AVFormatContext** input_ctx, int** streams_map);
 bool ctx_init_output_from_input(AVFormatContext** input_ctx, AVFormatContext** output_ctx);
@@ -44,8 +73,10 @@ int main(int argc, char **argv) {
     const char* out_filename = argv[2];
 
     // create input format context
-    AVFormatContext* input_ctx = NULL; // this is AV (audio/video) context
-    if (!make_input_ctx(&input_ctx, in_filename)) {
+    FileReader reader(in_filename);     // this is out "memory reader"
+    AVIOContext* avio_input_ctx = NULL; // this is IO (input/output) context, needed for i/o customizations
+    AVFormatContext* input_ctx = NULL;  // this is AV (audio/video) context
+    if (!make_input_ctx(&input_ctx, &avio_input_ctx, &reader, in_filename)) {
         return EXIT_FAILURE;
     }
     
@@ -89,8 +120,11 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    // close input context and input file with it
+    // close input context
     avformat_close_input(&input_ctx);
+
+    // close our "memory reader"
+    reader.close();
 
     // cleanup: free memory
     avformat_free_context(input_ctx);
@@ -100,8 +134,54 @@ int main(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-bool make_input_ctx(AVFormatContext** input_ctx, const char* filename) {
-    int ret = avformat_open_input(input_ctx, filename, NULL, NULL);
+// this callback will be used for our custom i/o context (AVIOContext)
+static int read_callback(void* opaque, uint8_t* buf, int buf_size) {
+    auto& reader = *reinterpret_cast<FileReader*>(opaque);
+    int read_data_size = reader.read((char*)buf, buf_size);
+
+    if (read_data_size == -1) {
+        return AVERROR_EOF; // this is the way to tell our input context that there's no more data
+    }
+
+    return read_data_size;
+}
+
+bool make_input_ctx(AVFormatContext** input_ctx, AVIOContext** avio_input_ctx, FileReader* reader, const char* filename) {
+    // now we need to allocate a memory buffer for our context to use. keep in mind, that buffer size
+    // should be chosen correctly for various containers, this noticeably affectes performance
+    // NOTE: this buffer is managed by AVIOContext and you should not deallocate by yourself
+    const size_t buffer_size = 8192;
+    unsigned char* ctx_buffer = (unsigned char*)(av_malloc(buffer_size));
+    if (ctx_buffer == NULL) {
+        std::cout << "Could not allocate read buffer for AVIOContext\n";
+        return false;
+    }
+
+    // let's setup a custom AVIOContext for AVFormatContext
+
+    // cast reader to convenient short variable
+    void* reader_ptr = reinterpret_cast<void*>(static_cast<FileReader*>(reader));
+
+    // now the important part, we need to create a custom AVIOContext, provide it buffer and
+    // buffer size for reading and read callback that will do the actual reading into the buffer
+    *avio_input_ctx = avio_alloc_context(
+        ctx_buffer,        // memory buffer
+        buffer_size,       // memory buffer size
+        0,                 // 0 for reading, 1 for writing. we're reading, so — 0.
+        reader_ptr,        // pass our reader to context, it will be transparenty passed to read callback on each invocation
+        &read_callback,     // out read callback
+        NULL,              // write callback — we don't need one
+        NULL               // seek callback - we don't need one
+    );
+
+    // allocate new AVFormatContext
+    *input_ctx = avformat_alloc_context();
+
+    // assign our new and shiny custom i/o context to AVFormatContext
+    (*input_ctx)->pb = *avio_input_ctx;
+
+    // note "some_dummy_filename", ffmpeg requires it as some default non-empty placeholder
+    int ret = avformat_open_input(input_ctx, "some_dummy_filename", NULL, NULL);
     if (ret < 0) {
         std::cout << "Could not open input file " << filename << ", reason: " << av_err2str(ret) << '\n';
         return false;

@@ -2,7 +2,7 @@
 FFmpeg coding tutorial - learn how to code custom transmuxing, transcoding, metadata extraction, frame-by-frame reading and more
 
 ## Intro
-Welcome, weary traveller! Let me guess why you're here ;) Maybe because you've been trying to figure out how to use libav libraries (libavformat/libavcodec/etc) and failed miserably? Well, it's no suprise, given the fact that ffmpeg is a product made by engineers for engineers. Existing documentation is either lacking or outdated, examples you find online don't work for whatever reason. This repo will hopefully help :3 I've spent a bit of time to research on ffmpeg internals while trying to figure out how to do remuxing and transcoding with libav. This repo is my attempt to share my findings and spare you some time. This repo was inspired by https://github.com/leandromoreira/ffmpeg-libav-tutorial, some other really useful pointers can be found here: https://ffmpeg.org/doxygen/trunk/examples.html
+Welcome, weary traveller! Let me guess why you're here ;) Maybe because you've been trying to figure out how to use libav libraries (libavformat/libavcodec/etc) and failed miserably? Well, it's no suprise, given the fact that ffmpeg is a product made by engineers for engineers. Existing documentation is either lacking or outdated, examples you find online don't work for whatever reason (most probably they are not compatible with latest FFmpeg source). This repo will hopefully help :3 I've spent a bit of time to research on ffmpeg internals while trying to figure out how to do remuxing and transcoding with libav. This repo is my attempt to share my findings and spare you some time. Code in this repo is not just some snippets, each file is fully finished example that compiles and runs. This repo was inspired by https://github.com/leandromoreira/ffmpeg-libav-tutorial, some other really useful pointers can also be found here: https://ffmpeg.org/doxygen/trunk/examples.html
 
 ## Required software and dependencies
 We will need 3 things:
@@ -45,7 +45,7 @@ These examples are not ordered in any particular way, "Example 1" does not mean 
 **Source**: 02-reading-from-memory.cpp \
 **Binary**: remux_from_memory \
 **Function**: reads mpeg ts h264 data from file, puts it into memory buffer and remuxes to FLV on the fly \
-**Notes**: shows how to create AVFormatContext that reads from memory buffer, instead of a file directly \
+**Notes**: shows how to create AVFormatContext that reads from memory buffer using customized i/o context (AVIOContext) \
 **Usage**: tool takes 2 input arguments
 1) path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example)
 2) output filename. output file will be written to current directory you're in
@@ -54,7 +54,20 @@ These examples are not ordered in any particular way, "Example 1" does not mean 
 ./remux_from_memory test_x264.mp4 test.flv
 ```
 
-### Example 3 - Reading input stream from SRT, remux to FLV and write result to file
+### Example 3 - Writing output stream to memory
+**Source**: 03-writing-to-memory.cpp \
+**Binary**: remux_to_memory \
+**Function**: reads mpeg ts h264 data from file stream, remuxes it to FLV on the fly and writes results to memory buffer
+**Notes**: shows how to create AVFormatContext that reads from memory buffer using customized i/o context (AVIOContext) \
+**Usage**: tool takes 2 input arguments
+1) path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example)
+2) output filename. output file will be written to current directory you're in
+
+```bash
+./remux_to_memory test_x264.mp4 test.flv
+```
+
+### Example 4 - Reading input stream from SRT, remux to FLV and write result to file
 **Source**: 02-reading-from-srt.cpp \
 **Binary**: srt_to_flv \
 **Function**: receives mpeg ts h264 data from SRT stream, puts it into memory buffer and remuxes to FLV on the fly \
@@ -67,11 +80,11 @@ These examples are not ordered in any particular way, "Example 1" does not mean 
 ./remux_from_memory 0.0.0.0:9999 test.flv
 ```
 
-### Example 3 - Get media info
+### Example 5 - Get media info
 2 DO
 
-### Example 4 - Transcoding
+### Example 6 - Transcoding
 2 DO
 
-### Example 5 - Streaming to rtmp server
+### Example 7 - Streaming to rtmp server
 2 DO
