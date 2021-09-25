@@ -32,8 +32,8 @@ After compilation you will find a bunch of binaries in project root. Their meani
 Binary: **remux**
 Function: remux from any container with h264 encoded video to FLV container.
 Usage: tool takes 2 input arguments
-- 1) path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example)
-- 2) output filename. output file will be written to current directory you're in
+1) path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example)
+2) output filename. output file will be written to current directory you're in
 
 ### Get media info
 2 DO
