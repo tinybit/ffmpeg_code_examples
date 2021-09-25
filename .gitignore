@@ -1,3 +1,7 @@
+*.mp4
+*.flv
+remux
+
 # Prerequisites
 *.d
 
