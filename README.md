@@ -26,6 +26,8 @@ make
 ```
 
 ## Examples
+WARNING: THIS IS NOT PRODUCTION READY CODE! It's intended use is getting familiar with libav and compiling working examples.
+
 After compilation you will find a bunch of binaries in project root. Their meaning and usage are described below.
 These examples are not ordered in any particular way, "Example 1" does not mean it's simplier that others, even though I've tried keeping code clean and well commented for ease of understanding. Any suggestions / bugfixes are welcome.
 
