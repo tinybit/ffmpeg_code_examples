@@ -1,5 +1,5 @@
 /*
-* File: 01-remuxing.hpp
+* File: 02-reading-from-memory.cpp
 *
 * Author: Rim Zaydullin
 * Repo: https://github.com/tinybit/ffmpeg_code_examples

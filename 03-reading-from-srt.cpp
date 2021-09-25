@@ -1,5 +1,5 @@
 /*
-* File: 01-remuxing.hpp
+* File: 03-reading-from-srt.cpp
 *
 * Author: Rim Zaydullin
 * Repo: https://github.com/tinybit/ffmpeg_code_examples
