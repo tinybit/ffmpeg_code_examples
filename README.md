@@ -71,7 +71,7 @@ These examples are not ordered in any particular way, "Example 1" does not mean 
 **Source**: 04-reading-from-srt.cpp \
 **Binary**: srt_to_flv \
 **Function**: Receives mpeg ts h264 data from SRT stream, puts it into memory buffer and remuxes to FLV on the fly \
-**Notes**: Advanced example. Shows how to create simple SRT server and process received media stream with libav. Similar to example 2, but we're reading data sent over the network. Please note that this is not a full-fledged server, it will correctly handle one incoming connection only.
+**Notes**: Advanced example. Shows how to create simple SRT server and process received media stream with libav. Similar to example 2, but we're reading data sent over the network. Please note that this is not a full-fledged server, it will correctly handle one incoming connection only. \
 **Usage**: Tool takes 3 input arguments
 1) ip. for SRT server to bind to
 2) port. for SRT server to run on
