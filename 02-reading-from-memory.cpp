@@ -30,8 +30,8 @@ extern "C" {
 
 // FileReader class emulates reading from memory, you can implement your own memory reader/buffer following this
 // code. you only need to feed AVIOContext.read_packet callback with data, that's all.
-// AVIOContext.read_packet callback will be called during av_read_frame(context, packet) and other
-// context read operations. see more in functions make_input_ctx(), read_callback() below
+// AVIOContext.read_packet callback will be called during av_read_frame(context, packet) and other context read
+// operations. see more in functions make_input_ctx(), read_callback() below
 class FileReader {
 public:
     FileReader(const char* filename) {
@@ -130,6 +130,7 @@ int main(int argc, char **argv) {
     avformat_free_context(input_ctx);
     avformat_free_context(output_ctx);
     av_freep(&streams_map);
+    av_freep(&avio_input_ctx);
 
     return EXIT_SUCCESS;
 }
@@ -179,6 +180,9 @@ bool make_input_ctx(AVFormatContext** input_ctx, AVIOContext** avio_input_ctx, F
 
     // assign our new and shiny custom i/o context to AVFormatContext
     (*input_ctx)->pb = *avio_input_ctx;
+
+    // tell our input context that we're using custom i/o and there's no backing file
+    (*input_ctx)->flags |= AVFMT_FLAG_CUSTOM_IO | AVFMT_NOFILE;
 
     // note "some_dummy_filename", ffmpeg requires it as some default non-empty placeholder
     int ret = avformat_open_input(input_ctx, "some_dummy_filename", NULL, NULL);

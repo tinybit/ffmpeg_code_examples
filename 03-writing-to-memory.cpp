@@ -28,35 +28,49 @@ extern "C" {
 #include "helpers.hpp"
 #include "ring_buffer.hpp"
 
-// FileReader class emulates reading from memory, you can implement your own memory reader/buffer following this
-// code. you only need to feed AVIOContext.read_packet callback with data, that's all.
-// AVIOContext.read_packet callback will be called during av_read_frame(context, packet) and other
-// context read operations. see more in functions make_input_ctx(), read_callback() below
-class FileReader {
+// FileWriter class emulates writing from memory, you can implement your own memory writer/buffer following this
+// code. you only need to feed AVIOContext.write_packet callback with data, that's all.
+// AVIOContext.read_packet callback will be called during av_write_frame(context, packet),
+// av_interleaved_write_frame(context, packet), avformat_write_header() and other context write operations.
+// see more in functions make_output_ctx(), write_callback() below
+class FileWriter {
 public:
-    FileReader(const char* filename) {
-        input_file.open(filename, std::ifstream::binary | std::ifstream::in);
+    FileWriter(const char* filename) {
+        output_file.open(filename, std::ifstream::binary | std::ifstream::out);
     }
 
-    int read(char* data, int size) {
-        if (input_file.eof()) {
-            return -1;
-        }
+    void write(char* data, int size) {
+        output_file.write(data, size);
+    }
 
-        input_file.read(data, size);
-        return input_file.gcount();
+    void seek(int pos) {
+        output_file.seekp(pos);
+    }
+
+    int size() {
+        // store current writing position
+        auto pos = output_file.tellp();
+
+        // jump to end writing position, this is the side of data in bytes
+        output_file.seekp(std::ios_base::end);
+        int file_size = output_file.tellp();
+
+        // restore previous position
+        output_file.seekp(pos);
+
+        return file_size;
     }
 
     void close() {
-        input_file.close();
+        output_file.close();
     }
 
-    std::ifstream input_file;
+    std::ofstream output_file;
 };
 
 // functions predeclarations
-bool make_input_ctx(AVFormatContext** input_ctx, AVIOContext** avio_input_ctx, FileReader* reader, const char* filename);
-bool make_output_ctx(AVFormatContext** output_ctx, const char* format_name, const char* filename);
+bool make_input_ctx(AVFormatContext** input_ctx, const char* filename);
+bool make_output_ctx(AVFormatContext** output_ctx, AVIOContext** avio_output_ctx, FileWriter* writer, const char* format_name, const char* filename);
 bool make_streams_map(AVFormatContext** input_ctx, int** streams_map);
 bool ctx_init_output_from_input(AVFormatContext** input_ctx, AVFormatContext** output_ctx);
 bool open_output_file(AVFormatContext** output_ctx, const char* filename);
@@ -73,16 +87,16 @@ int main(int argc, char **argv) {
     const char* out_filename = argv[2];
 
     // create input format context
-    FileReader reader(in_filename);     // this is out "memory reader"
-    AVIOContext* avio_input_ctx = NULL; // this is IO (input/output) context, needed for i/o customizations
-    AVFormatContext* input_ctx = NULL;  // this is AV (audio/video) context
-    if (!make_input_ctx(&input_ctx, &avio_input_ctx, &reader, in_filename)) {
+    AVFormatContext* input_ctx = NULL;
+    if (!make_input_ctx(&input_ctx, in_filename)) {
         return EXIT_FAILURE;
     }
     
-    // create output format context
-    AVFormatContext* output_ctx = NULL; // this is AV (audio/video) context
-    if (!make_output_ctx(&output_ctx, "flv", out_filename)) {
+    // create output format contex
+    FileWriter writer(out_filename);     // this is out "memory writer"
+    AVIOContext* avio_output_ctx = NULL; // this is IO (input/output) context, needed for i/o customizations
+    AVFormatContext* output_ctx = NULL;  // this is AV (audio/video) context
+    if (!make_output_ctx(&output_ctx, &avio_output_ctx, &writer, "flv", out_filename)) {
         return EXIT_FAILURE;
     }
 
@@ -124,64 +138,44 @@ int main(int argc, char **argv) {
     avformat_close_input(&input_ctx);
 
     // close our "memory reader"
-    reader.close();
+    writer.close();
 
     // cleanup: free memory
     avformat_free_context(input_ctx);
     avformat_free_context(output_ctx);
     av_freep(&streams_map);
+    av_freep(&avio_output_ctx);
 
     return EXIT_SUCCESS;
 }
 
 // this callback will be used for our custom i/o context (AVIOContext)
-static int read_callback(void* opaque, uint8_t* buf, int buf_size) {
-    auto& reader = *reinterpret_cast<FileReader*>(opaque);
-    int read_data_size = reader.read((char*)buf, buf_size);
+static int write_callback(void* opaque, uint8_t* buf, int buf_size) {
+    auto& writer = *reinterpret_cast<FileWriter*>(opaque);
+    writer.write((char*)buf, buf_size);
 
-    if (read_data_size == -1) {
-        return AVERROR_EOF; // this is the way to tell our input context that there's no more data
-    }
+    std::cout << buf_size << std::endl;
 
-    return read_data_size;
+    return buf_size; // we always write all requested data succesfully
 }
 
-bool make_input_ctx(AVFormatContext** input_ctx, AVIOContext** avio_input_ctx, FileReader* reader, const char* filename) {
-    // now we need to allocate a memory buffer for our context to use. keep in mind, that buffer size
-    // should be chosen correctly for various containers, this noticeably affectes performance
-    // NOTE: this buffer is managed by AVIOContext and you should not deallocate by yourself
-    const size_t buffer_size = 8192;
-    unsigned char* ctx_buffer = (unsigned char*)(av_malloc(buffer_size));
-    if (ctx_buffer == NULL) {
-        std::cout << "Could not allocate read buffer for AVIOContext\n";
-        return false;
+// this callback will be used for seeking through our data
+// 2DO more details
+static int64_t seek_callback(void *opaque, int64_t offset, int whence) {
+    auto& writer = *reinterpret_cast<FileWriter*>(opaque);
+
+    if (whence == 0 || (whence & AVIO_SEEKABLE_NORMAL)) {
+        writer.seek(int(offset));
+        return offset;
+    } else if (whence & AVSEEK_SIZE) {
+        return writer.size();
     }
+    
+    return AVERROR(EIO); // unexpected seek request, treat it as error
+}
 
-    // let's setup a custom AVIOContext for AVFormatContext
-
-    // cast reader to convenient short variable
-    void* reader_ptr = reinterpret_cast<void*>(static_cast<FileReader*>(reader));
-
-    // now the important part, we need to create a custom AVIOContext, provide it buffer and
-    // buffer size for reading and read callback that will do the actual reading into the buffer
-    *avio_input_ctx = avio_alloc_context(
-        ctx_buffer,        // memory buffer
-        buffer_size,       // memory buffer size
-        0,                 // 0 for reading, 1 for writing. we're reading, so — 0.
-        reader_ptr,        // pass our reader to context, it will be transparenty passed to read callback on each invocation
-        &read_callback,     // out read callback
-        NULL,              // write callback — we don't need one
-        NULL               // seek callback - we don't need one
-    );
-
-    // allocate new AVFormatContext
-    *input_ctx = avformat_alloc_context();
-
-    // assign our new and shiny custom i/o context to AVFormatContext
-    (*input_ctx)->pb = *avio_input_ctx;
-
-    // note "some_dummy_filename", ffmpeg requires it as some default non-empty placeholder
-    int ret = avformat_open_input(input_ctx, "some_dummy_filename", NULL, NULL);
+bool make_input_ctx(AVFormatContext** input_ctx, const char* filename) {
+    int ret = avformat_open_input(input_ctx, filename, NULL, NULL);
     if (ret < 0) {
         std::cout << "Could not open input file " << filename << ", reason: " << av_err2str(ret) << '\n';
         return false;
@@ -196,8 +190,36 @@ bool make_input_ctx(AVFormatContext** input_ctx, AVIOContext** avio_input_ctx, F
     return true;
 }
 
-bool make_output_ctx(AVFormatContext** output_ctx, const char* format_name, const char* filename) {
-    int ret = avformat_alloc_output_context2(output_ctx, NULL, format_name, filename);
+bool make_output_ctx(AVFormatContext** output_ctx, AVIOContext** avio_output_ctx, FileWriter* writer, const char* format_name, const char* filename) {
+    // now we need to allocate a memory buffer for our context to use. keep in mind, that buffer size
+    // should be chosen correctly for various containers, this noticeably affectes performance
+    // NOTE: this buffer is managed by AVIOContext and you should not deallocate by yourself
+    const size_t buffer_size = 8192;
+    unsigned char* ctx_buffer = (unsigned char*)(av_malloc(buffer_size));
+    if (ctx_buffer == NULL) {
+        std::cout << "Could not allocate read buffer for AVIOContext\n";
+        return false;
+    }
+
+    // let's setup a custom AVIOContext for AVFormatContext
+
+    // cast reader to convenient short variable
+    void* writer_ptr = reinterpret_cast<void*>(static_cast<FileWriter*>(writer));
+
+    // now the important part, we need to create a custom AVIOContext, provide it buffer and
+    // buffer size for reading and read callback that will do the actual reading into the buffer
+    *avio_output_ctx = avio_alloc_context(
+        ctx_buffer,        // memory buffer
+        buffer_size,       // memory buffer size
+        1,                 // 0 for reading, 1 for writing. we're writing, so — 1.
+        writer_ptr,        // pass our reader to context, it will be transparenty passed to read callback on each invocation
+        NULL,              // read callback — we don't need one
+        &write_callback,   // our write callback 
+        &seek_callback     // our seek callback
+    );
+
+    // allocate new AVFormatContext. note "some_dummy_filename", ffmpeg requires it as some default non-empty placeholder
+    int ret = avformat_alloc_output_context2(output_ctx, NULL, "flv", "some_dummy_filename");
     if (ret < 0) {
         std::cout << "Could not create output context, reason: " << av_err2str(ret) << '\n';
         return false;
@@ -207,6 +229,10 @@ bool make_output_ctx(AVFormatContext** output_ctx, const char* format_name, cons
         std::cout << "Could not create output context, no further details.\n";
         return false;
     }
+
+    // assign our new and shiny custom i/o context to AVFormatContext
+    (*output_ctx)->pb = *avio_output_ctx;
+    (*output_ctx)->flags |= AVFMT_FLAG_CUSTOM_IO | AVFMT_NOFILE;
 
     return true;
 }
@@ -267,17 +293,8 @@ bool ctx_init_output_from_input(AVFormatContext** input_ctx, AVFormatContext** o
 }
 
 bool open_output_file(AVFormatContext** output_ctx, const char* filename) {
-    // unless it's a no file (we'll talk later about that) write to the disk (FLAG_WRITE)
-    // but basically it's a way to save the file to a buffer so you can store it
-    // wherever you want.
-    int ret = avio_open(&((*output_ctx)->pb), filename, AVIO_FLAG_WRITE);
-    if (ret < 0) {
-        std::cout << "Could not open output file " << filename << ", reason: " << av_err2str(ret) << '\n';
-        return false;
-    }
-
     // https://ffmpeg.org/doxygen/trunk/group__lavf__encoding.html#ga18b7b10bb5b94c4842de18166bc677cb
-    ret = avformat_write_header(*output_ctx, NULL);
+    int ret = avformat_write_header(*output_ctx, NULL);
     if (ret < 0) {
         std::cout << "Failed to write output file header to " << filename << ", reason: " << av_err2str(ret) << '\n';
         return false;
@@ -342,14 +359,14 @@ bool close_output_file(AVFormatContext** output_ctx) {
         return false;
     }
 
-    /* close output */
-    if (output_ctx && !((*output_ctx)->oformat->flags & AVFMT_NOFILE)) {
-        ret = avio_closep(&(*output_ctx)->pb);
-        if (ret < 0) {
-            std::cout << "Failed to close AV output, reason: " << av_err2str(ret) << '\n';
-            return false;
-        }
-    }
+    // /* close output */
+    // if (output_ctx && !((*output_ctx)->oformat->flags & AVFMT_NOFILE)) {
+    //     ret = avio_closep(&(*output_ctx)->pb);
+    //     if (ret < 0) {
+    //         std::cout << "Failed to close AV output, reason: " << av_err2str(ret) << '\n';
+    //         return false;
+    //     }
+    // }
 
     return true;
 }
