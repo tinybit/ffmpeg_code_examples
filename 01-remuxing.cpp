@@ -1,3 +1,13 @@
+/*
+* File: 01-remuxing.hpp
+*
+* Author: Rim Zaydullin
+* Repo: https://github.com/tinybit/ffmpeg_code_examples
+*
+* simple libav remuxing example
+*
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>

@@ -1,6 +1,7 @@
 *.mp4
 *.flv
 remux
+read_from_memory
 
 # Prerequisites
 *.d
