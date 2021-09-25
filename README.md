@@ -27,19 +27,27 @@ make
 
 ## Examples
 After compilation you will find a bunch of binaries in project root. Their meaning and usage are described below.
+This examples are not ordered in any particular way, "Example 1" does not mean it's simplier that other ones, even though I've tries keeping code clean and well commented for ease of understanding. Any suggestions / bugfixes are welcome.
 
-### Remuxing
+### Example 1 - Remuxing
+Source: 01-remuxing.cpp
 Binary: **remux**
 Function: remux from any container with h264 encoded video to FLV container.
 Usage: tool takes 2 input arguments
 1) path to video file. file should be encoded with h264 codec, in whatever container (mpeg ts, for example)
 2) output filename. output file will be written to current directory you're in
 
-### Get media info
+### Example 2 - Reading input stream from memory
+Source: 02-reading-from_memory.cpp
+Binary: **remux**
+Function: receiving h264 data in mpeg ts container and remux to FLV on the fly.
 2 DO
 
-### Transcoding
+### Example 3 - Get media info
 2 DO
 
-### Streaming to rtmp server
+### Example 4 - Transcoding
+2 DO
+
+### Example 5 - Streaming to rtmp server
 2 DO
