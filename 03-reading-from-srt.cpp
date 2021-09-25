@@ -1,10 +1,18 @@
 /*
+*
 * File: 03-reading-from-srt.cpp
 *
 * Author: Rim Zaydullin
 * Repo: https://github.com/tinybit/ffmpeg_code_examples
 *
-* receive SRT video stream, remux from mpeg-ts to FLV and write to a file
+* more advanced libav remuxing example.
+* receive live video stream from SRT client, write data into memory buffer, configure AVFormatContext
+* to read from memory buffer, remux to FLV and write result to a file
+*
+* input file requirements:
+* - video must be encoded with wither h264 or vp6 video codecs
+* - audio must be encoded with mp3 or aac codecs
+* the above are FLV container limitations
 *
 */
 

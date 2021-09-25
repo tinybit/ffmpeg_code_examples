@@ -1,10 +1,17 @@
 /*
+*
 * File: 01-remuxing.cpp
 *
 * Author: Rim Zaydullin
 * Repo: https://github.com/tinybit/ffmpeg_code_examples
 *
-* simple libav remuxing example
+* simple libav remuxing example.
+* read video file from disk, remux, write resulting file to disk
+*
+* input file requirements:
+* - video must be encoded with wither h264 or vp6 video codecs
+* - audio must be encoded with mp3 or aac codecs
+* the above are FLV container limitations
 *
 */
 
