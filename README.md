@@ -68,10 +68,10 @@ These examples are not ordered in any particular way, "Example 1" does not mean 
 ```
 
 ### Example 4 - Reading input stream from SRT, remux to FLV and write result to file
-**Source**: 02-reading-from-srt.cpp \
+**Source**: 04-reading-from-srt.cpp \
 **Binary**: srt_to_flv \
 **Function**: receives mpeg ts h264 data from SRT stream, puts it into memory buffer and remuxes to FLV on the fly \
-**Notes**: shows how to create simple SRT server. same as example 2, but we're reading from data sent over the network \
+**Notes**: shows how to create simple SRT server and process received media stream with libav. mix of example 2 and 3, but we're reading from data sent over the network \
 **Usage**: tool takes 2 input arguments
 1) hostname:port. ip/port for SRT server to run on
 2) output filename. output file will be written to current directory you're in
@@ -88,3 +88,4 @@ These examples are not ordered in any particular way, "Example 1" does not mean 
 
 ### Example 7 - Streaming to rtmp server
 2 DO
+
