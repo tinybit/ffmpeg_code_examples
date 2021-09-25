@@ -10,7 +10,7 @@ We will need 3 things:
 - c++ compiler (even though c++ is used marginally in my examples)
 - compiled ffmpeg libraries
 
-## Installing dependengies
+## Installing dependencies
 2 DO: compiler, dep libs
 
 ## Compiling FFmpeg
@@ -18,7 +18,7 @@ It's possible to install libav binaries from ready packages, for example **sudo 
 
 2 DO: ffmpeg compilation and installation of libav libs, static and dynamic
 
-## Compile all examples
+## Compiling all examples
 ```bash
 git clone git@github.com:tinybit/ffmpeg_code_examples.git
 cd ffmpeg_code_examples
