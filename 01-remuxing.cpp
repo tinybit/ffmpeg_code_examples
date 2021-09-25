@@ -35,8 +35,8 @@ bool remux_streams(AVFormatContext** input_ctx, AVFormatContext** output_ctx, in
 bool close_output_file(AVFormatContext** output_ctx);
 
 int main(int argc, char** argv) {
-    if (argc < 3) {
-        printf("You need to pass at least two parameters.\n");
+    if (argc != 3) {
+        std::cout << "Usage: " << argv[0] << " <input file> <output file>\n";
         return EXIT_FAILURE;
     }
 
