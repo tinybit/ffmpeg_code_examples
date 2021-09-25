@@ -34,7 +34,7 @@ bool open_output_file(AVFormatContext** output_ctx, const char* filename);
 bool remux_streams(AVFormatContext** input_ctx, AVFormatContext** output_ctx, int* streams_map);
 bool close_output_file(AVFormatContext** output_ctx);
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     if (argc < 3) {
         printf("You need to pass at least two parameters.\n");
         return EXIT_FAILURE;
@@ -179,8 +179,8 @@ bool ctx_init_output_from_input(AVFormatContext** input_ctx, AVFormatContext** o
             return false;
         }
 
+        // set stream codec tag to 0, for libav to detect automatically
         out_stream->codecpar->codec_tag = 0;
-        //av_codec_get_tag(
     }
 
     return true;

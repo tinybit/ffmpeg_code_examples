@@ -263,8 +263,8 @@ bool ctx_init_output_from_input(AVFormatContext** input_ctx, AVFormatContext** o
             return false;
         }
 
+        // set stream codec tag to 0, for libav to detect automatically
         out_stream->codecpar->codec_tag = 0;
-        //av_codec_get_tag(
     }
 
     return true;

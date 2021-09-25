@@ -33,6 +33,11 @@ extern "C" {
 // AVIOContext.read_packet callback will be called during av_write_frame(context, packet),
 // av_interleaved_write_frame(context, packet), avformat_write_header() and other context write operations.
 // see more in functions make_output_ctx(), write_callback() below
+// NOTE: FileWriter.seek() and seek_callback(void*, int64_t, int) can be omited for either file processing or
+// live streaming, they are needed for the method av_write_trailer(context), which writes non-critical metadata
+// to video file header. that video header will be missing in case of live streaming especially, so seeking
+// code can be removed. for video files it's more correct to update this meta, so it's still useful and
+// supresses errors "Failed to update header with correct duration."
 class FileWriter {
 public:
     FileWriter(const char* filename) {
@@ -93,7 +98,7 @@ int main(int argc, char **argv) {
     }
     
     // create output format contex
-    FileWriter writer(out_filename);     // this is out "memory writer"
+    FileWriter writer(out_filename);     // this is output "memory writer"
     AVIOContext* avio_output_ctx = NULL; // this is IO (input/output) context, needed for i/o customizations
     AVFormatContext* output_ctx = NULL;  // this is AV (audio/video) context
     if (!make_output_ctx(&output_ctx, &avio_output_ctx, &writer, "flv", out_filename)) {
@@ -137,7 +142,7 @@ int main(int argc, char **argv) {
     // close input context
     avformat_close_input(&input_ctx);
 
-    // close our "memory reader"
+    // close our "memory writer"
     writer.close();
 
     // cleanup: free memory
@@ -160,16 +165,20 @@ static int write_callback(void* opaque, uint8_t* buf, int buf_size) {
 }
 
 // this callback will be used for seeking through our data
-// 2DO more details
+// NOTE: FileWriter.seek() and seek_callback(void*, int64_t, int) can be omited for either file processing or
+// live streaming, they are needed for the method av_write_trailer(context), which writes non-critical metadata
+// to video file header. that video header will be missing in case of live streaming especially, so seeking
+// code can be removed. for video files it's more correct to update this meta, so it's still useful and
+// supresses errors "Failed to update header with correct duration."
 static int64_t seek_callback(void *opaque, int64_t offset, int whence) {
-    auto& writer = *reinterpret_cast<FileWriter*>(opaque);
+    // auto& writer = *reinterpret_cast<FileWriter*>(opaque);
 
-    if (whence == 0 || (whence & AVIO_SEEKABLE_NORMAL)) {
-        writer.seek(int(offset));
-        return offset;
-    } else if (whence & AVSEEK_SIZE) {
-        return writer.size();
-    }
+    // if (whence == 0 || (whence & AVIO_SEEKABLE_NORMAL)) {
+    //     writer.seek(int(offset));
+    //     return offset;
+    // } else if (whence & AVSEEK_SIZE) {
+    //     return writer.size();
+    // }
     
     return AVERROR(EIO); // unexpected seek request, treat it as error
 }
@@ -193,7 +202,7 @@ bool make_input_ctx(AVFormatContext** input_ctx, const char* filename) {
 bool make_output_ctx(AVFormatContext** output_ctx, AVIOContext** avio_output_ctx, FileWriter* writer, const char* format_name, const char* filename) {
     // now we need to allocate a memory buffer for our context to use. keep in mind, that buffer size
     // should be chosen correctly for various containers, this noticeably affectes performance
-    // NOTE: this buffer is managed by AVIOContext and you should not deallocate by yourself
+    // NOTE: this buffer is managed by AVIOContext and you should not deallocate it by yourself
     const size_t buffer_size = 8192;
     unsigned char* ctx_buffer = (unsigned char*)(av_malloc(buffer_size));
     if (ctx_buffer == NULL) {
@@ -203,16 +212,17 @@ bool make_output_ctx(AVFormatContext** output_ctx, AVIOContext** avio_output_ctx
 
     // let's setup a custom AVIOContext for AVFormatContext
 
-    // cast reader to convenient short variable
+    // cast writer to convenient short variable
     void* writer_ptr = reinterpret_cast<void*>(static_cast<FileWriter*>(writer));
 
     // now the important part, we need to create a custom AVIOContext, provide it buffer and
-    // buffer size for reading and read callback that will do the actual reading into the buffer
+    // buffer size for writing and write callback that will do the actual reading into the buffer
+    // NOTE: seek callback is implemented too, see seek_callback() function description
     *avio_output_ctx = avio_alloc_context(
         ctx_buffer,        // memory buffer
         buffer_size,       // memory buffer size
         1,                 // 0 for reading, 1 for writing. we're writing, so — 1.
-        writer_ptr,        // pass our reader to context, it will be transparenty passed to read callback on each invocation
+        writer_ptr,        // pass our writer to context, it will be transparenty passed to write callback on each invocation
         NULL,              // read callback — we don't need one
         &write_callback,   // our write callback 
         &seek_callback     // our seek callback
@@ -285,8 +295,8 @@ bool ctx_init_output_from_input(AVFormatContext** input_ctx, AVFormatContext** o
             return false;
         }
 
+        // set stream codec tag to 0, for libav to detect automatically
         out_stream->codecpar->codec_tag = 0;
-        //av_codec_get_tag(
     }
 
     return true;
@@ -328,7 +338,7 @@ bool remux_streams(AVFormatContext** input_ctx, AVFormatContext** output_ctx, in
         // set stream index, based on our map
         packet.stream_index = streams_map[packet.stream_index];
         
-        /* copy packet */
+        // copy packet
         AVStream* in_stream  = (*input_ctx)->streams[packet.stream_index];
         AVStream* out_stream = (*output_ctx)->streams[packet.stream_index];
         packet.pts = av_rescale_q_rnd(packet.pts, in_stream->time_base, out_stream->time_base, AVRounding(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
@@ -358,15 +368,6 @@ bool close_output_file(AVFormatContext** output_ctx) {
         std::cout << "Failed to write trailer to output, reason: " << av_err2str(ret) << '\n';
         return false;
     }
-
-    // /* close output */
-    // if (output_ctx && !((*output_ctx)->oformat->flags & AVFMT_NOFILE)) {
-    //     ret = avio_closep(&(*output_ctx)->pb);
-    //     if (ret < 0) {
-    //         std::cout << "Failed to close AV output, reason: " << av_err2str(ret) << '\n';
-    //         return false;
-    //     }
-    // }
 
     return true;
 }
